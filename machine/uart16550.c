@@ -6,7 +6,7 @@
 #include "uart16550.h"
 #include "fdt.h"
 
-volatile uint8_t* uart16550;
+volatile uint32_t* uart16550;
 // some devices require a shifted register index
 // (e.g. 32 bit registers instead of 8 bit registers)
 static uint32_t uart16550_reg_shift;
@@ -86,15 +86,7 @@ static void uart16550_done(const struct fdt_scan_node *node, void *extra)
   struct uart16550_scan *scan = (struct uart16550_scan *)extra;
   if (!scan->compat || !scan->reg || uart16550) return;
 
-  if (scan->clock_freq != 0)
-    uart16550_clock = scan->clock_freq;
-  // if device tree doesn't supply a clock, fallback to default clock of 1843200
-
-  // Check for divide by zero
-  uint32_t divisor = uart16550_clock / (16 * (scan->baud ? scan->baud : UART_DEFAULT_BAUD));
-  // If the divisor is out of range, don't assert, set the rate back to the default
-  if (divisor >= 0x10000u)
-    divisor = uart16550_clock / (16 * UART_DEFAULT_BAUD);
+  uint32_t divisor = 50000000u / (16 * UART_DEFAULT_BAUD);
 
   uart16550 = (void*)((uintptr_t)scan->reg + scan->reg_offset);
   uart16550_reg_shift = scan->reg_shift;
